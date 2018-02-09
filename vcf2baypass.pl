@@ -10,6 +10,7 @@ use Pod::Usage;
 #
 # File	  : vcf2baypass.pl
 # History : 2/2/2018 Created by Kevin Freeman(KF)
+#			2/9/2018 KF added col_group functionality
 #
 #######################################################################################
 #
