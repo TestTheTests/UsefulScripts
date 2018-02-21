@@ -148,14 +148,14 @@ sub calcAlleles{
 		die "VCF data does not match population data, different number of
 		individuals", $!;
 	}
-
+	my @alleleArray;
 	foreach my $group (sort { $a <=> $b } keys %groupsHash){
 		my @individuals = split (" ", $groupsHash{$group});					# find all individuals in the group
 		my $groupVals = join(" ",@snpValsArray[@individuals]);	# find values by index
 		my ($allele1, $allele2) = countAlleles($groupVals);
-		$alleleString = join(" ",$alleleString,$allele1,$allele2);
+		@alleleArray = push @alleleArray, ($allele1,$allele2);
 	}
-	return substr $alleleString, 1;
+	return join (" ", @alleleArray);
 }
 #say "calc alleles: ", calcAlleles($snpValArray[0], \%groupsHash);
 #my $deref = $snpValArray[0];
