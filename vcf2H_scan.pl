@@ -56,12 +56,6 @@ unless (open($outfh, '>', $outFile)){
 	die "Can't open $outFile for writing", $!;
 }
 
-### Initialize lookup table
-my %lookupTable= ('0' => undef,		# this will change to ref allele 				
-			  	  '1' => undef,		# this will change to alt allele
-			  	  '|' => ',',
-			      '.' => 'N'		# missing data
-);
 ### convert
 convertVcf($infh, $outfh);
 ## give feedback and close files
@@ -114,14 +108,14 @@ sub _vcfLine2HscanLine {
 	my $ref = $refArgs 		-> {reference};
 	my $alt = $refArgs 		-> {alt};
 	
-	$lookupTable{'0'} = $ref;
-	$lookupTable{'1'} = $alt;
+	my @gtArray    = $line =~ /[\d\.]\|[\d\.]/g;     # get only the genotype data
+	my $hscanLine  = join(",", @gtArray);		    		 	
+ 	
+	$hscanLine =~ s/0/$ref/eg;					     # replace 0's with ref allele
+	$hscanLine =~ s/1/$alt/eg;					     # replace 1's with alt allele
+	$hscanLine =~ s/\|/,/g;						     # replace |'s with commas
+	$hscanLine =~ s/\./N/g;						     # replace missing data with N
 	
-	my @hscanLine = ($refArgs -> {pos});	    # intialize line array, starting with SNP position
-	
-	for ($line =~ /[\d\.]\|[\d\.]/g){
-		$_ =~ s/(.)/defined($lookupTable{$1}) ? $lookupTable{$1} : $1/eg;
-		push @hscanLine, $_;
-	}
-	return join(',', @hscanLine);
+	return join(',', $refArgs -> {pos}, $hscanLine); # add position to start of 
+												     # line and return
 }
