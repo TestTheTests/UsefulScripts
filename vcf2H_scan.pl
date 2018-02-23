@@ -47,6 +47,12 @@ unless (open($infh, '<', $vcf)){
 	die "Unable to open $vcf for reading", $!;
 }
 
+### Initialize lookup table
+my %lookupTable= ('0' => undef,		# this will change to ref allele 				
+			  	  '1' => undef,		# this will change to alt allele
+			  	  '|' => ',',
+			      '.' => 'N'		# missing data
+);
 my @allHscanLines;
 while (<$infh>){
 	my @line;
@@ -60,8 +66,8 @@ while (<$infh>){
 	my $refAllele = $line[3];
 	my $altAllele = $line[4];
 	
-	my $translatedLine = vcfLine2HscanLine( { pos => $position, reference => $refAllele, 
-											  alt => $altAllele, line => $_} );
+	my $translatedLine = vcfLine2HscanLine( { pos   => $position,  reference => $refAllele, 
+											  alt   => $altAllele, line 	 => $_ } );
 	push @allHscanLines, $translatedLine;
 	if (scalar @allHscanLines %1000 == 0){					# give user feedback
 		say "processed ",scalar @allHscanLines, " lines";
@@ -93,19 +99,17 @@ say "\nCreated ", $outFile;
 
 sub vcfLine2HscanLine {
 	my ($refArgs) = @_;
-	my $line = $refArgs -> {line};
-	my $ref = $refArgs -> {reference};
-	my $alt = $refArgs -> {alt};
+	my $line = $refArgs 	-> {line};
+	my $ref = $refArgs 		-> {reference};
+	my $alt = $refArgs 		-> {alt};
 	
-	my %table = ( '0' => $ref,					# lookup table for substitutions
-			  	  '1' => $alt,
-			  	  '|' => ',',
-			      '.' => 'N'
-	);
+	$lookupTable{'0'} = $ref;
+	$lookupTable{'1'} = $alt;
+	
 	my @hscanLine = ($refArgs -> {pos});	    # intialize line array, starting with SNP position
 	
 	for ($line =~ /[\d\.]\|[\d\.]/g){
-		$_ =~ s/(.)/defined($table{$1}) ? $table{$1} : $1/eg;
+		$_ =~ s/(.)/defined($lookupTable{$1}) ? $lookupTable{$1} : $1/eg;
 		push @hscanLine, $_;
 	}
 	return join(',', @hscanLine);
