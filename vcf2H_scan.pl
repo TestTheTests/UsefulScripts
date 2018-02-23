@@ -55,14 +55,12 @@ my %lookupTable= ('0' => undef,		# this will change to ref allele
 );
 my @allHscanLines;
 while (<$infh>){
-	my @line;
-	if ($_ !~ /^#/){
-		@line = split("\t",$_);
-	}			
-	else {													# skip any header line
+	if ($_ =~ /^#/){			#skip header lines
 		next;
 	}
-	my $position = $line[1];
+	my @line = split("\t",$_);
+			
+	my $position  = $line[1];
 	my $refAllele = $line[3];
 	my $altAllele = $line[4];
 	
