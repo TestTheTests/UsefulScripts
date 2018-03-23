@@ -1,9 +1,9 @@
 # Conversion Scripts
 
 This is a collection of scripts used to convert VCF files to other formats:
-* vcf2baypass.pl
-* vcf2H_scan.pl
-* vcf2map.pl
+* [vcf2baypass.pl](#vcf2baypasspl)
+* [vcf2H_scan.pl](#vcf2h_scanpl)
+* [vcf2map.pl](#vcf2mappl)
 
 ---
 
@@ -91,7 +91,7 @@ The -help option can be used to display usage infromation from the command line.
 ### Outputs
 
 One .map file for use in hapflk analysis. Each line is a variant and it contains the chromosome, the variant ID, and the bp coordinate. More information on the .map file format can 
-be found in the [PLINK file format reference] (https://www.cog-genomics.org/plink2/formats#map).
+be found in the [PLINK file format reference](https://www.cog-genomics.org/plink2/formats#map).
 
 
 
