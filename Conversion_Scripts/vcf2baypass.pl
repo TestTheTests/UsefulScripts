@@ -5,6 +5,7 @@ use feature qw(say);
 use Scalar::Util qw(looks_like_number);
 use Getopt::Long;
 use Pod::Usage;
+use Data::Dumper qw(Dumper);
 
 ######################################################################################
 #
@@ -23,17 +24,30 @@ use Pod::Usage;
 my $vcf; 
 my $popFile; 
 my $outFile;
-my $col;
+my $colGroup;
+my $colEnv;
+my $colPheno;
 
 ########### Command line options ######################################################
 
 my $usage = "\nUsage: $0 [options]\n 
-Options:
+Options: 
+
      -vcf		VCF to convert  (required)
+     
      -population	Corresponding population file (required)
-     -col_group		specify the column of the population file that your 
-     				group data is in. 1st col is 0 (required)
-     -outfile		Name of output file (default: <name_of_vcf>.geno)
+     
+     -colGroup		Specify the column of the population file that your 
+     			group data is in. 1st col is 0 (required)
+     			
+     -colEnv		Specify the column in the population file that your
+     			environment data is in (optional)
+     			
+     -colPheno		Specify the column in the population file that your
+     			phenotype data is in (optional)
+     			
+     -outfile		Output file prefix (default: <name_of_vcf>)
+     
      -help		Show this message
 
 ";
@@ -41,7 +55,9 @@ Options:
 GetOptions(
    'vcf=s' => \$vcf,
    'population=s'	=> \$popFile,
-   'col_group=i' 	=> \$col,
+   'colGroup=i' 	=> \$colGroup,
+   'colEnv=i'		=> \$colEnv,
+   'colPheno=i'		=> \$colPheno,
    'outfile=s' 		=> \$outFile,
     help => sub { pod2usage($usage); },
 ) or pod2usage(2);
@@ -52,7 +68,7 @@ unless ($vcf) {
 unless ($popFile) {
 	die "\n-pop not defined\n$usage";
 }
-unless ($col) {
+unless ($colGroup) {
 	die "\n-col_group not defined\n$usage";
 }
 
@@ -73,23 +89,38 @@ while(<$popFh>){
     unless (looks_like_number $line[0]) { # make sure the program doesn't store the header
     	next;
     }
-    my $group = $line[$col];
+    
+    my $group = $line[$colGroup];
+    
     if (int($group) != $group){
     	# make sure user gave the correct column number
     	die "Invalid group value: ",$group,", are you sure you selected the right column?";
     }
-    if ($groupsHash{$group}){		  # check if group matches a previously read group
-   		$groupsHash{$group} = join(" ",$groupsHash{$group}, $individualNum);
+    if (defined $groupsHash{$group}){		  # check if group matches a previously read group
+   		$groupsHash{$group}{individuals}  = join(" ",$groupsHash{$group}{individuals}, $individualNum);
+   		
+   		# add environments and phenotypes if user gave column numbers
+   		$groupsHash{$group}{environments} = join(" ",$groupsHash{$group}{environments}, $line[$colEnv])
+   			if defined $colEnv;
+   		$groupsHash{$group}{phenotypes}   = join(" ",$groupsHash{$group}{environments}, $line[$colEnv])
+   			if defined $colPheno;
     }
     else {
-    	$groupsHash{$group} = $individualNum;
+    	$groupsHash{$group}{individuals} = $individualNum;
+    	
+    	# add environments and phenotypes if user gave column numbers
+    	$groupsHash{$group}{environments} = $line[$colEnv]   if defined $colEnv;
+    	$groupsHash{$group}{phenotypes}   = $line[$colPheno] if defined $colPheno;
     }
     $individualNum++;
 }
-# groupsHash now contains keys corresponding to each group in the population and values
-# that are space separated strings containing id #s of each individual in the group
+# groupsHash is now a hash of hashes. The 'outer' hash has keys that correspond with
+# the group numbers and the inner, anonymous hash has keys that correspond with the type
+# of data we want to access. It always has the key "individuals" to access all the individual
+# numbers. If the user defined them, it may also have keys for "environments" and "phenotypes"
 
 close $popFh;
+
 ############ Read VCF into an array ###################################################
 say "Reading VCF.....";
 
@@ -121,14 +152,23 @@ foreach my $snp (@snpValArray){
 }
 
 unless ($outFile){
-	$outFile = $vcf.".geno";
+	$outFile = $vcf;
 }
-open (my $outFh, '>', $outFile);
+open (my $outFh, '>', $outFile.".geno");
 print $outFh $baypass;
 close $outFh;
 
 my $ngroups = keys(%groupsHash);
-say "\nCreated ", $outFile;
+say "\nCreated ", $outFile.".geno";
+
+## create covariate file if env or pheno was defined
+if (defined $colEnv or defined $colPheno){
+	my $covarFile = $outFile.".covar";
+	printCovarFile(\%groupsHash, $covarFile);
+	say "Created ", $covarFile, "\nVar 1 = environment, Var 2 = phenotype\
+	 (if both env and pheno are present)";
+}
+
 say "\nNumber of populations = ", $ngroups;
 
 #-----------------------------------------------------------------------
@@ -149,17 +189,16 @@ sub calcAlleles{
 		individuals", $!;
 	}
 	my @alleleArray;
+	
 	foreach my $group (sort { $a <=> $b } keys %groupsHash){
-		my @individuals = split (" ", $groupsHash{$group});					# find all individuals in the group
-		my $groupVals = join(" ",@snpValsArray[@individuals]);	# find values by index
+		my @individuals = split (" ", $groupsHash{$group}{individuals}); # find all individuals in the group
+		my $groupVals = join(" ",@snpValsArray[@individuals]);	         # find values by index
 		my ($allele1, $allele2) = countAlleles($groupVals);
-		@alleleArray = push @alleleArray, ($allele1,$allele2);
+		push @alleleArray, ($allele1,$allele2);
 	}
-	return join (" ", @alleleArray);
+	return join(" ", @alleleArray);
 }
-#say "calc alleles: ", calcAlleles($snpValArray[0], \%groupsHash);
-#my $deref = $snpValArray[0];
-#say "deref: ", @$deref;
+
 #-----------------------------------------------------------------------
 # ($count1, $count2) = countAlleles(@values);
 #-----------------------------------------------------------------------
@@ -173,5 +212,56 @@ sub countAlleles{
 	return ($count1, $count2);
 }
 
+#-----------------------------------------------------------------------
+# printCovarFile(\%groupHash, $fileName;
+#-----------------------------------------------------------------------
+# This function, called in void context, takes a hash reference
+# with covariate data and a file name and prints the covariate data to 
+# the named file.
+#-----------------------------------------------------------------------
+sub printCovarFile{
+	my ($hashRef, $fileName) = @_;
+	my $covarData ="";
+	my %covarHash = %$hashRef;
+	
+	my @sortedKeys = sort {$a <=> $b} keys %covarHash;
+	
+	if (defined $colEnv){
+		foreach my $group (@sortedKeys){ # go through each group and get the average Env		
+			my $environments      = $covarHash{$group}{environments};
+			my @environmentsArray = split(" ", $environments);
+			$covarData = join(" ", $covarData, getAverage(@environmentsArray));
+		}
+		$covarData = join("",$covarData, "\n"); # add a new line to separate covariates
+	}
+	if (defined $colPheno){
+		foreach my $group (@sortedKeys){    # go through each group and get the average pheno values
+			my $phenotypes		  = $covarHash{$group}{phenotypes};
+			my @phenotypesArray   = split(" ", $phenotypes);
+			$covarData = join(" ", $covarData, getAverage(@phenotypesArray));
+		}
+	}
+	
+	$covarData =~ s/^\s+//mg;					# trim leading whitespaces
+	# print the data to the file
+	open (my $covFh, '>', $fileName);
+	print $covFh $covarData;
+	close $covFh;
+}
 
-
+#-----------------------------------------------------------------------
+# $average = getAverage(@values);
+#-----------------------------------------------------------------------
+# This function takes an array of numbers and returns the average in 
+# scalar context 
+#-----------------------------------------------------------------------
+sub getAverage {
+	my @numbers = @_;
+	my $length = @numbers;
+	my $sum = 0;
+	
+	foreach my $number(@numbers){
+		$sum += $number;
+	}
+	return $sum/$length;
+}
