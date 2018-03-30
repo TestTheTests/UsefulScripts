@@ -32,7 +32,15 @@ Required. A file that gives population information corresponding to the individu
 
 **col_group:** Required. This is an integer that tells the script which column to look in for the group information. Numbering starts at 0.
 
+**col_Env:** Optional. This is an integer that tells which column of the population file the environment variable is located in. This will 	 
+	     cause the program to produce a covariate file with the environmental average value for each group. This covariate file is
+	     necessary for certain modes of Baypass.
+
+**col_Pheno:** Optional. You may also specify the column that the phenotype data is in. If both col_Env and col_Pheno are specified the 
+	       covariate file will contain one line for each variable.   
+
 **Outfile:** Optional. File to print the results to. If no name is provided, the default is <name_of_vcf>.geno 
+
 
 ### Outputs
 
@@ -40,6 +48,7 @@ One file in the proper format for a BayPass scan. Each row in the file is a posi
 
 The number of populations is also printed to standard out. BayPass will ask you for this number when you run the scan.
 
+If col_Env or col_Pheno was specified, a covariate file of the form <name_of_vcf>.covar will also be produced.
 
 
 ---
