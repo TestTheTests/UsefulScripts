@@ -4,7 +4,7 @@ This is a collection of scripts used to convert VCF files to other formats:
 * [vcf2baypass.pl](#vcf2baypasspl)
 * [vcf2H_scan.pl](#vcf2h_scanpl)
 * [vcf2map.pl](#vcf2mappl)
-
+* [pruneSNPs.pl](#prunesnpspl)
 ---
 
 
@@ -14,7 +14,7 @@ This script takes a vcf file and a corresponding population file, extracts the g
 
 ### Usage
 
-`$ perl vcf2baypass.pl -vcf <yourFile.vcf> -pop <populationfile> -col_group <int> -outfile <yourOutfile>`
+`$ perl vcf2baypass.pl -vcf <yourFile.vcf> -pop <populationfile> -col_group 5 -outGeno "variantGenotypes"`
 
 The -help option can be used to display usage information from the command line.
 
@@ -39,7 +39,9 @@ Required. A file that gives population information corresponding to the individu
 **col_Pheno:** Optional. You may also specify the column that the phenotype data is in. If both col_Env and col_Pheno are specified the 
 	       covariate file will contain one line for each variable.   
 
-**Outfile:** Optional. File to print the results to. If no name is provided, the default is <name_of_vcf>.geno 
+**outGeno:** Optional. Prefix for the file to print the genotype information to. If no name is provided, the default is <name_of_vcf>
+
+**outCovar:** Optional. Prefix for the file to print the covariate information to. If no name is provided, defaults to <name_of_vcf> 
 
 
 ### Outputs
@@ -83,7 +85,7 @@ One file that can be used in H-scan. Each line in the file represents one SNP. T
 
 ## vcf2map.pl
 
-This script takes a vcf file and reformats the variant data into a .map file for use in [hapflk](https://forge-dga.jouy.inra.fr/projects/hapflk/wiki)
+This script takes a file in VCF format and reformats the variant data into a .map file for use in [hapflk](https://forge-dga.jouy.inra.fr/projects/hapflk/wiki)
 
 ### Usage
 
@@ -104,3 +106,47 @@ be found in the [PLINK file format reference](https://www.cog-genomics.org/plink
 
 
 
+
+---
+
+
+
+## pruneSNPs.pl
+
+This script takes a file in VCF format and a file that indicates whether an allele is quasi independent or not. It takes all the quasi-independent alleles and prints them to a new VCF.
+
+### Usage
+
+`$ perl pruneSNPs.pl -vcf <yourFile.vcf> -scan <indicateQuasiIndependence.txt> -posCol 0 -chrCol 1 -indCol 3`
+
+### Inputs
+
+**VCF File:** Required. File to be pruned. Can be either phased or unphased.
+
+**Scan File:** Required. Text file with results from a test for quasi-independence. Each line after the header should correspond to one allele. Also, it must have the following: 
+* A 1 line header 
+* A column that indicates the chromosome that the allele is on
+* A column that indicates the position
+* A column that indicates whether the allele is quasi independent by a value of "TRUE" or "FALSE". "TRUE" means the allele is quasi independent
+
+**posCol:** The column that indicates the position of the allele. Column numbering starts with 0. The posCol defaults to 0.
+
+**chrCol:** The column that indicates the chromosome the allele is on. chrCol defaults to 1.
+
+**indCol:** The column that indicates the quasi independence of the allele. indCol defaults to 3.
+
+
+**outfile:** The file where you would like to store the pruned VCF. Defaults to <name_of_vcf.pruned.vcf>
+
+### Outputs
+
+A pruned VCF printed to outfile. A list of the indexes of the alleles that were kept, printed to a tab-delimited text file called "indexes_remaining.txt".
+
+Example of indexes_remaining.txt if the 1st 10  alleles were kept:
+
+0	1	2	3	4	5	6	7	8	9
+
+
+
+
+---
