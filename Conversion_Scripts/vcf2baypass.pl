@@ -23,7 +23,8 @@ use Data::Dumper qw(Dumper);
 
 my $vcf; 
 my $popFile; 
-my $outFile;
+my $outGeno;
+my $outCovar;
 my $colGroup;
 my $colEnv;
 my $colPheno;
@@ -46,7 +47,9 @@ Options:
      -colPheno		Specify the column in the population file that your
      			phenotype data is in (optional)
      			
-     -outfile		Output file prefix (default: <name_of_vcf>)
+     -outGeno		Output file prefix for genotype file (default: <name_of_vcf>)
+     
+     -outCovar		Output file prefix for covar file (default: <name_of_vcf>)
      
      -help		Show this message
 
@@ -58,7 +61,8 @@ GetOptions(
    'colGroup=i' 	=> \$colGroup,
    'colEnv=i'		=> \$colEnv,
    'colPheno=i'		=> \$colPheno,
-   'outfile=s' 		=> \$outFile,
+   'outGeno=s' 		=> \$outGeno,
+   'outCovar=s'		=> \$outCovar,
     help => sub { pod2usage($usage); },
 ) or pod2usage(2);
 
@@ -151,22 +155,25 @@ foreach my $snp (@snpValArray){
 	$baypass = join("",$baypass,$alleles,"\n");
 }
 
-unless ($outFile){
-	$outFile = $vcf;
+unless ($outGeno){
+	$outGeno = $vcf;
 }
-open (my $outFh, '>', $outFile.".geno");
+unless ($outCovar){
+	$outCovar = $vcf;
+}
+open (my $outFh, '>', $outGeno.".geno");
 print $outFh $baypass;
 close $outFh;
 
 my $ngroups = keys(%groupsHash);
-say "\nCreated ", $outFile.".geno";
+say "\nCreated ", $outGeno.".geno";
 
 ## create covariate file if env or pheno was defined
 if (defined $colEnv or defined $colPheno){
-	my $covarFile = $outFile.".covar";
+	my $covarFile = $outCovar.".covar";
 	printCovarFile(\%groupsHash, $covarFile);
-	say "Created ", $covarFile, "\nVar 1 = environment, Var 2 = phenotype\
-	 (if both env and pheno are present)";
+	say "Created ", $covarFile, "\n\nVar 1 = environment, Var 2 = phenotype
+(if both env and pheno are present)";
 }
 
 say "\nNumber of populations = ", $ngroups;
