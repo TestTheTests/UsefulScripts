@@ -78,7 +78,7 @@ while (<$scanFh>){
 	# independence 
 	# ex : 1.37685 => "TRUE"
 	#     chr pos       ind
-	$chr =~ s/"//g;
+	$chr =~ s/"//g;		# remove quotation marks around chr
 	my $key = join(".", $chr,$pos); 
 	$posHash{$key} = $ind;
 }
@@ -108,9 +108,8 @@ unless (open ($indexesOutFh, '>', $indexFile)){
 my $i = 0;
 while (<$inVCFfh>){
 	chomp $_;
-	if ($_ =~ /^#/){        # print all header lines automatically
-		 $_ =~ s/\ti\d+//g; # remove individual numbers from header (many will be
-		 say $outFh $_;     # pruned, no longer accurate)
+	if ($_ =~ /^#/){        # print all header lines automatically	
+		 say $outFh $_;   
 		 next;
 	} 
 	my @line = split("\t", $_);
