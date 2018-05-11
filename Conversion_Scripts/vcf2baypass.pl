@@ -21,13 +21,9 @@ use Data::Dumper qw(Dumper);
 #
 #######################################################################################
 
-my $vcf; 
-my $popFile; 
-my $outGeno;
-my $outCovar;
-my $colGroup;
-my $colEnv;
-my $colPheno;
+my ($vcf, $popFile); 
+my ($inFinal, $colEnv, $colPheno, $colGroup);
+my ($outGeno, $outCovar);
 
 ########### Command line options ######################################################
 
@@ -46,6 +42,8 @@ Options:
      			
      -colPheno		Specify the column in the population file that your
      			phenotype data is in (optional)
+     -colInFinal	Specify the column in the population file that tells you whether
+     			an individual is in the final dataset, ie your VCF (optional)
      			
      -outGeno		Output file prefix for genotype file (default: <name_of_vcf>)
      
@@ -61,6 +59,7 @@ GetOptions(
    'colGroup=i' 	=> \$colGroup,
    'colEnv=i'		=> \$colEnv,
    'colPheno=i'		=> \$colPheno,
+   'colInFinal=i'	=> \$inFinal,
    'outGeno=s' 		=> \$outGeno,
    'outCovar=s'		=> \$outCovar,
     help => sub { pod2usage($usage); },
@@ -77,7 +76,7 @@ unless ($colGroup) {
 }
 
 ############ Read pop file into a hash ################################################
-say "\nReading pop file.....";
+say STDERR "\nReading pop file.....";
 
 my $popFh;
 unless (open ($popFh, "<", $popFile) ){
@@ -92,6 +91,14 @@ while(<$popFh>){
     my @line = split(" ",$_);
     unless (looks_like_number $line[0]) { # make sure the program doesn't store the header
     	next;
+    }
+    
+    # if $inFinal was specified, check if the individual is in the final dataset. If not, skip
+    if (defined $inFinal){
+    	my $in = $line[$inFinal];
+    	unless($in eq "TRUE"){
+    		next;
+    	}
     }
     
     my $group = $line[$colGroup];
@@ -126,7 +133,7 @@ while(<$popFh>){
 close $popFh;
 
 ############ Read VCF into an array ###################################################
-say "Reading VCF.....";
+say STDERR "Reading VCF.....";
 
 my $vcfFh;
 unless (open ($vcfFh, "<", $vcf) ){
@@ -148,7 +155,7 @@ close $vcfFh;
 
 ########### Put data into baypass format ###############################################
 
-say "Converting.....";
+say STDERR "Converting.....";
 my $baypass = "";
 foreach my $snp (@snpValArray){
 	my $alleles = calcAlleles($snp, \%groupsHash);
@@ -166,17 +173,18 @@ print $outFh $baypass;
 close $outFh;
 
 my $ngroups = keys(%groupsHash);
-say "\nCreated ", $outGeno.".geno";
+say STDERR "\nCreated ", $outGeno.".geno";
 
 ## create covariate file if env or pheno was defined
 if (defined $colEnv or defined $colPheno){
 	my $covarFile = $outCovar.".covar";
 	printCovarFile(\%groupsHash, $covarFile);
-	say "Created ", $covarFile, "\n\nVar 1 = environment, Var 2 = phenotype
+	say STDERR "Created ", $covarFile, "\n\nVar 1 = environment, Var 2 = phenotype
 (if both env and pheno are present)";
 }
 
-say "\nNumber of populations = ", $ngroups;
+say STDERR "\nNumber of populations = ", $ngroups;
+say $ngroups;
 
 #-----------------------------------------------------------------------
 # $alleleString = calcAlleles( $refArray, $refHash);
