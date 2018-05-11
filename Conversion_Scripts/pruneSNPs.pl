@@ -9,7 +9,8 @@ use Data::Dumper;
 ######################################################################################
 #
 # File	  : pruneSnps.pl
-# History : 4/6/2018 Created by Kevin Freeman(KF)
+# History : 4/6/2018  Created by Kevin Freeman(KF)
+#		  : 4/11/2018 KF changed logic to parse header instead of using user input
 #
 #######################################################################################
 #

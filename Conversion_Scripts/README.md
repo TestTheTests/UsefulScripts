@@ -124,17 +124,10 @@ This script takes a file in VCF format and a file that indicates whether an alle
 **VCF File:** Required. File to be pruned. Can be either phased or unphased.
 
 **Scan File:** Required. Text file with results from a test for quasi-independence. Each line after the header should correspond to one allele. Also, it must have the following: 
-* A 1 line header 
-* A column that indicates the chromosome that the allele is on
-* A column that indicates the position
-* A column that indicates whether the allele is quasi independent by a value of "TRUE" or "FALSE". "TRUE" means the allele is quasi independent
-
-**posCol:** The column that indicates the position of the allele. Column numbering starts with 0. The posCol defaults to 0.
-
-**chrCol:** The column that indicates the chromosome the allele is on. chrCol defaults to 1.
-
-**indCol:** The column that indicates the quasi independence of the allele. indCol defaults to 3.
-
+* A 1 line header that includes "pos" "chrom", and "quasi_indep" column labels 
+* A column that indicates the chromosome that the allele is on ("chrom")
+* A column that indicates the position ("pos")
+* A column that indicates whether the allele is quasi independent ("quasi_indep")  by a value of "TRUE" or "FALSE". "TRUE" means the allele is quasi independent
 
 **outfile:** The file where you would like to store the pruned VCF. Defaults to <name_of_vcf.pruned.vcf>
 
