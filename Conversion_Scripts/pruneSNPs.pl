@@ -22,9 +22,6 @@ use Data::Dumper;
 my $vcf;
 my $scanResults;
 my $outFile;
-my $posCol = 0;
-my $chrCol = 1;
-my $indCol = 3;
 
 ########### Command line options ######################################################
 
@@ -32,10 +29,6 @@ my $usage = "\nUsage: $0 [options]\n
 Options:
      -vcf		VCF to prune  (required)
      -scan		File with scan results (required)
-     -posCol	Column of the scan file that contains the SNP position (default = 0)
-     -chrCol	Column of the scan file that contains the chromosome number (0-based, default = 1) 
-     -indCol	Column of the scan file that indicates whether the SNP is
-     			quasi-independent (0-based, default = 3)
      -outfile		Name of output file (default: <name_of_vcf>.pruned.vcf)
      -help		Show this message
 
@@ -44,9 +37,6 @@ Options:
 GetOptions(
    'vcf=s' 			=> \$vcf,
    'scan=s' 		=> \$scanResults,
-   'chrCol=i'		=> \$chrCol,
-   'posCol=i' 		=> \$posCol,
-   'indCol=i' 		=> \$indCol, 
    'outfile=s' 		=> \$outFile,
     help => sub { pod2usage($usage); },
 ) or pod2usage(2);
@@ -61,26 +51,30 @@ unless ($scanResults) {
 ######## Read in Scan Results ####################################################
 my $scanFh;
 unless (open($scanFh, '<', $scanResults)){
-	die "Could not open scan file for reading $!";
+	die "Could not open $scanResults for reading $!";
 }
 my $first = 1;
 my %posHash;
+my ($posCol, $chrCol, $indCol);
 while (<$scanFh>){
-	if ($first){    # skip header line
-		$first = 0;
-		next;
-	}
 	chomp $_;
-	my @line = split(/\s/, $_); # split on whitespace
-	my ($chr,$pos,$ind) = @line[$chrCol, $posCol, $indCol];
-	
-	# combine chr and pos into one key for the hash that maps to the 
-	# independence 
-	# ex : 1.37685 => "TRUE"
-	#     chr pos       ind
-	$chr =~ s/"//g;		# remove quotation marks around chr
-	my $key = join(".", $chr,$pos); 
-	$posHash{$key} = $ind;
+	my @line = split(/\s/, $_); #split on whitespace
+	if ($first){    # process header line
+		($posCol) = grep { $line[$_] eq "\"pos\"" } 0..$#line;
+		($chrCol) = grep { $line[$_] eq "\"chrom\"" } 0..$#line;
+		($indCol) = grep { $line[$_] eq "\"quasi_indep\"" } 0..$#line;
+		$first = 0;
+	}
+	else {
+		my ($chr,$pos,$ind) = @line[$chrCol, $posCol, $indCol];
+		# combine chr and pos into one key for the hash that maps to the 
+		# independence 
+		# ex : 1.37685 => "TRUE"
+		#     chr pos       ind
+		$chr =~ s/"//g;		# remove quotation marks around chr
+		my $key = join(".", $chr,$pos); 
+		$posHash{$key} = $ind;
+	}
 }
 
 ###### Read in VCF, check lines, print ###########################################
@@ -93,11 +87,11 @@ unless (defined $outFile){
 
 my $inVCFfh;
 unless (open($inVCFfh, '<', $vcf)){
-	die "Can't open VCF file for reading $!";
+	die "Can't open $vcf file for reading $!";
 }
 my $outFh;
 unless (open($outFh, '>', $outFile)){
-	die "Can't open outfile for writing $!";
+	die "Can't open $outFile for writing $!";
 }
 my $indexesOutFh;
 my $indexFile = "indexes_remaining.txt";
