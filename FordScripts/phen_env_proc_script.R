@@ -92,7 +92,7 @@ for (i in filename) {
   k=k+1
   file_contents <- unlist(strsplit(i, split="[_]"))
   seed <- file_contents[1]
-  phen_env_table <- read.table(paste0(results_path, i), header = T, sep = " ")
+  phen_env_table <- read.table(paste0(results_path, i), header = T, sep = "\t")
   #linecolor <- sample(color_list, 1, replace = FALSE)
   linecolor <- colors_used[k]
   plot(phen_env_table$sim.generation, phen_env_table$corr1_2, pch=19, type= "p",
