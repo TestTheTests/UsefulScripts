@@ -21,25 +21,24 @@
 # .
 # |
 # |----run_baypass
-# |		|------input_files
-# |     |  			|------xxxx_Invers_indFILT.txt
-# |		|			|------xxxx_Invers_ScanResults.txt
-# |		|			|------xxxx_Invers_VCFallFILT.vcf.gz
+# |	|------input_files
+# |     |  	|	|------xxxx_Invers_indFILT.txt
+# |	|	|	|------xxxx_Invers_ScanResults.txt
+# |	|	|	|------xxxx_Invers_VCFallFILT.vcf.gz
 # |     |-----converted_files     (created by script)
-# |  	|			|------xxxx_Invers_VCFallFILT.covar
-# |		|			|------xxxx_Invers_VCFallFILT.geno
-# |		|			|------xxxx_Invers_VCFallFILT_PRUNED.covar
-# |		|			|------xxxx_Invers_VCFallFILT_PRUNED.geno
-# |		|-----baypasss_results     (created by script)
-# |		|			|------
-# |		|			. (many files, see baypass 2.1 documnetation for more info)
-# |		|			.
-# |		|			. 
-# |		|-----log_files            (created by script)
-# |		|		    |------xxxx_baypass_err.txt
-# |		|			|------xxxx_baypass_log.txt					
-# |		|-----final_results_tables (created by script)
-# |		|			|------xxx_baypass_results.txt
+# |  	|		|------xxxx_Invers_VCFallFILT.covar
+# |	|		|------xxxx_Invers_VCFallFILT.geno
+# |	|		|------xxxx_Invers_VCFallFILT_PRUNED.covar
+# |	|		|------xxxx_Invers_VCFallFILT_PRUNED.geno
+# |	|-----baypasss_results     (created by script)
+# |	|	|	. (many files, see baypass 2.1 documnetation for more info)
+# |	|	|	.
+# |	|	|	. 
+# |	|-----log_files            (created by script)
+# |	|	|	|------xxxx_baypass_err.txt
+# |	|	|	|------xxxx_baypass_log.txt					
+# |	|-----final_results_tables (created by script)
+# |	|		|------xxx_baypass_results.txt
 # |     |-----run_baypass.sh
 # |----vcf2baypass.pl
 # |----pruneSNPs.pl
