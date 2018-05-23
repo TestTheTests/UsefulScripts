@@ -47,8 +47,9 @@
 #
 #######################################################################################
 SECONDS=0
+
 mypath="/home/kevin/LOTTERHOS_LAB/UsefulScripts/Conversion_Scripts/run_baypass"
-ncpus=1
+ncpus=3
 start=10900
 finish=$(($start + $ncpus-1))
 echo $start $finish
@@ -80,7 +81,7 @@ mkdir -p ./converted_files
 mkdir -p ./baypass_results
 
 # run baypass on all the SNPs
-echo -e "\n###############Running scripts on all snps#######################################"
+echo -e "\n############## Running scripts on all snps ######################################"
 for i in $(seq $start $finish)
 do 
 	echo -e "\n$i"
@@ -97,7 +98,7 @@ done
 wait 	# wait until baypass stops running in background
 
 # prune the snps and run baypass again on the pruned files
-echo -e "\n#############Pruning SNP files, running scripts on pruned files##################"
+echo -e "\n############ Pruning SNP files, running scripts on pruned files #################"
 for i in $(seq $start $finish)
 do
 	echo -e "\n"$i
@@ -113,13 +114,13 @@ do
 done
 wait
 # run baypass again, this time using the pruned covar matrix from the last step
-END
+
 cd $mypath
 gfileName="_Invers_VCFallFILT.geno"
 efileName="_Invers_VCFallFILT.covar"
 omegaFile="_PRUNED_mat_omega.out"
 
-echo -e "\n###########Running baypass on all SNPs with pruned matrix##########################"
+echo -e "\n########## Running baypass on all SNPs with pruned matrix #########################"
 for i in $(seq $start $finish)
 do
 	call_baypass_no_mat "_Invers_VCFallFILT.vcf" "" $i
@@ -138,15 +139,15 @@ do
     fi
     g_baypass -npop ${npopHash[$i]} -gfile ./converted_files/${i}$gfileName \
     -efile ./converted_files/${i}$efileName -scalecov \
-    -omegafile ./baypass_results/${i}$omegaFile -outprefix "${i}_ALL_PRUNED_MAT"\
+    -omegafile ./baypass_results/${i}$omegaFile -outprefix "./baypass_results/${i}_ALL_PRUNED_MAT"\
     >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt &
     sleep 1m
 done
 wait 
-
 # pull out analysis results and store in a table
 echo -e "\n################ Putting Results into Tables ##############################"
 cd ${mypath}/baypass_results
+pwd
 perl ../../getTableOfBaypassResults.pl -start $start -finish $finish
 echo -e "\n\nDone. Analysis took $(($SECONDS / 3600))hrs $((($SECONDS / 60) % 60))min"
 exit 0
