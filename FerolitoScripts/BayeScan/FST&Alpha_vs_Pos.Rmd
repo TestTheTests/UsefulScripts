@@ -1,0 +1,88 @@
+---
+title: "FST and Alpha Value Mapping Based on Base Pair Position"
+author: "Brian Ferolito"
+output: html_notebook
+---
+
+The following reads a text file with 4 columns. The first column is the index numbers of the 7,265 loci (beginning at 0
+and ending at 7,264). The second column is the corresponding base pair position. The third and fouth columns are the FST 
+and Alpha values, respectively. The columns are labeled and are stored into vectors.
+
+```{r Read the file into a data frame}
+
+fst_vs_pos<-read.table("~/Desktop/Lotterhos_Lab/fst_vs_pos.txt", col.names = c("Index", "Position", "FST", "Alpha", "Logarithm Posterior Odds", "Posterior Probability"))
+fst_vs_pos
+Base_Pair_Position<-fst_vs_pos[,2]
+FST_Value<-fst_vs_pos[,3]
+Alpha_Values<-fst_vs_pos[,4]
+logOdds<-fst_vs_pos[,5]
+Post.Prob<-fst_vs_pos[,6]
+```
+
+The following code plots the FST value by base pair position with a 95% quantile line. The two following quantile 
+lines are constructed by obtaining the quantile value and plotting that value as the y intercept with a slope of 0.
+
+```{r FST vs Base Pair Position}
+
+library(tidyverse)
+
+ggplot(data = fst_vs_pos) +
+  geom_point(mapping = aes(x = Base_Pair_Position, y = FST_Value)) +
+  geom_abline(mapping = aes(intercept = 0.012832 , slope = 0)) +
+  ggtitle("10944")
+
+  quantile(FST_Value, probs = (0.95))
+  
+```
+
+The folloing code plots the Alpha value by base pair position with a 95% quantile line.
+
+```{r Alpha Value vs Base Pair Position}
+
+library(tidyverse)
+
+ggplot(data = fst_vs_pos, mapping = aes(x = Base_Pair_Position, y = Alpha_Values)) +
+  geom_point() +
+  geom_abline(mapping = aes(intercept = 0.87006, slope = 0)) +
+  ggtitle("10944")
+
+  quantile(Alpha_Values, probs = (0.95))
+
+```
+
+```{r Log Post Odds}
+
+library(tidyverse)
+fst_vs_pos.filtered<-fst_vs_pos %>%
+  filter(fst_vs_pos$Logarithm.Posterior.Odds != 1000)
+
+
+
+
+ggplot(data = fst_vs_pos.filtered, mapping = aes(x = fst_vs_pos.filtered$Position, y = fst_vs_pos.filtered$Logarithm.Posterior.Odds)) +
+  geom_point() +
+  geom_abline(mapping = aes(intercept = 0.176422  , slope = 0)) +
+  ylab("Logarithm of Posterior Odds") +
+  xlab("Base Pair Position") +
+  ggtitle("10944")
+
+  quantile(fst_vs_pos.filtered$Logarithm.Posterior.Odds, probs = (0.95))
+
+```
+
+
+```{r}
+library(tidyverse)
+
+negativeLog.Post.Prob<-(-log(Post.Prob, 10))
+ggplot(data = fst_vs_pos, mapping = aes(x = Base_Pair_Position, y = negativeLog.Post.Prob)) +
+  geom_point() +
+  geom_abline(mapping = aes(intercept = 1.171256, slope = 0)) +
+  xlab("Base Pair Position") +
+  ylab("-log10 Posterior Probability") +
+  ggtitle("10944")
+
+  quantile(negativeLog.Post.Prob, probs = (0.95))
+
+```
+
