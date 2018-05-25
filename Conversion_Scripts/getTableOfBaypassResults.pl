@@ -44,7 +44,7 @@ unless ($start) {
 unless ($finish) {
 	die "\n-end not defined\n$usage";
 }
-my $outdir = "../final_results_tables/";
+my $outdir = "../results_final/";
 `mkdir -p $outdir`;
 
 ########## Loop through all results #######################################################
@@ -183,9 +183,9 @@ sub _readXtXfile {
 #-----------------------------------------------------------------------
 sub printResults{
 	my ($resultsHashRef, $outFh) = @_;
-	say $outFh join("\t", "pos","baypass_ALL_BF_pheno","baypass_ALL_BF_env",
-					"baypass_ALL_XTX", "baypass_PRUNED_BF_pheno",
-					"baypass_PRUNED_BF_env", "baypass_PRUNED_XTX");
+	say $outFh join("\t", "pos","baypass_2.1_ALL_BF_pheno","baypass_2.1_ALL_BF_env",
+					"baypass_2.1_ALL_XTX", "baypass_2.1_PRUNED_BF_pheno",
+					"baypass_2.1_PRUNED_BF_env", "baypass_2.1_PRUNED_XTX");
 	my $posRef         = $resultsHashRef -> {pos};
 	my $allPhenoRef    = $resultsHashRef -> {ALLPheno};
 	my $allEnvRef      = $resultsHashRef -> {ALLEnv};
