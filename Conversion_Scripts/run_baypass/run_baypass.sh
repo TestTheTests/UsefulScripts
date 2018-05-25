@@ -70,8 +70,8 @@ function call_baypass_no_mat {
     g_baypass -npop ${npopHash[$i]} \
      -gfile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.geno \
      -efile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.covar -scalecov \
-     -outprefix ./baypass_results/${i}${out_suffix}\
-     >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt &
+     -outprefix ./baypass_results/${i}${out_suffix} -ncpus 4\
+     >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
 }
 cd $mypath
 # create necessary directories for organization
@@ -138,8 +138,9 @@ do
     fi
     g_baypass -npop ${npopHash[$i]} -gfile ./converted_files/${i}$gfileName \
     -efile ./converted_files/${i}$efileName -scalecov \
-    -omegafile ./baypass_results/${i}$omegaFile -outprefix "./baypass_results/${i}_ALL_PRUNED_MAT"\
-    >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt &
+    -omegafile ./baypass_results/${i}$omegaFile \
+    -outprefix "./baypass_results/${i}_ALL_PRUNED_MAT" -ncpus 4 \
+    >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
     sleep 1m
 done
 wait 
