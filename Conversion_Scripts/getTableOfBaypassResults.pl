@@ -50,7 +50,7 @@ my $outdir = "../results_final/";
 ########## Loop through all results #######################################################
 for (my $i = $start; $i <= $finish; $start++){
 	say "\n$i\n";
-	unless (-e "../input_files/".$i."_Invers_VCFallFILT.vcf"){ # make sure file exists
+	unless (-e "../../results_final/".$i."_Invers_VCFallFILT.vcf"){ # make sure file exists
 		say $i."_Invers_VCFallFILT.vcf not found, skipping";
 		$i++;
 		next;
@@ -79,7 +79,7 @@ sub getColumns{
 	my ($number) = @_;
 	## find position
 	my @posCol;
-	my $vcfFile = "../input_files/".$number."_Invers_VCFallFILT.vcf";
+	my $vcfFile = "../../results_final/".$number."_Invers_VCFallFILT.vcf";
 	if (open(my $vcfFh, '<', $vcfFile)){
 		while (<$vcfFh>){
 			my $line = $_;
