@@ -260,7 +260,7 @@ sub printCovarFile{
 	$covarData =~ s/^\s+//mg;					# trim leading whitespaces
 	# print the data to the file
 	open (my $covFh, '>', $fileName);
-	print $covFh $covarData;
+	say $covFh $covarData;
 	close $covFh;
 }
 

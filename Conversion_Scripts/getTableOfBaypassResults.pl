@@ -44,13 +44,15 @@ unless ($start) {
 unless ($finish) {
 	die "\n-end not defined\n$usage";
 }
-my $outdir = "../results_final/";
+my $outdir = "../../results_final/";
 `mkdir -p $outdir`;
 
 ########## Loop through all results #######################################################
 for (my $i = $start; $i <= $finish; $start++){
 	say "\n$i\n";
-	unless (-e "../../results_final/".$i."_Invers_VCFallFILT.vcf"){ # make sure file exists
+	my $vcfFile = $outdir.$i."_Invers_VCFallFILT.vcf";
+	`gunzip $vcfFile.gz`; 
+	unless (-e $vcfFile){ # make sure file exists
 		say $i."_Invers_VCFallFILT.vcf not found, skipping";
 		$i++;
 		next;
@@ -61,6 +63,7 @@ for (my $i = $start; $i <= $finish; $start++){
 	printResults($columnsHashRef, $outFh);
 	close $outFh;
 	say "Created ".$i."_baypass_results.txt";	
+	`gzip $vcfFile`;    # recompress vcf for space 
 	$i++;
 }
 
@@ -96,11 +99,12 @@ sub getColumns{
 		warn "Could not read pos from $vcfFile $!";
 	}
 	## find BF cols (stored as array refs)
-	my ($ALLEnvColRef, $ALLPhenoColRef) 		= _readBFfile('', $number);
-	my ($PRUNEDEnvColRef, $PRUNEDPhenoColRef)   = _readBFfile("_ALL_PRUNED_MAT", $number);
+	my ($ALLEnvColRef, $ALLPhenoColRef)  	   = _readBFfile('', $number);
+	my ($PRUNEDEnvColRef, $PRUNEDPhenoColRef)  = _readBFfile("_ALL_PRUNED_MAT", $number);
 	## find XtX cols (stored as array refs)
-	my $ALLxtxColRef 	 = _readXtXfile('', $number);
+	my $ALLxtxColRef    = _readXtXfile('', $number);
 	my $PRUNEDxtxColRef = _readXtXfile('_ALL_PRUNED_MAT', $number);
+	
 	# return all columns as references in a hash
 	return { pos       => \@posCol, 
 		 	 ALLEnv    => $ALLEnvColRef,    ALLPheno    => $ALLPhenoColRef,

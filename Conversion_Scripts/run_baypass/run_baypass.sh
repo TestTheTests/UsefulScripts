@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/local/bash
 ######################################################################################
 #
 # File	  : run_baypass.pl
@@ -47,9 +47,9 @@
 #######################################################################################
 SECONDS=0
 
-mypath="/home/kevin/LOTTERHOS_LAB/UsefulScripts/Conversion_Scripts/run_baypass"
-ncpus=3
-start=10900
+mypath="/Users/Shared/TestTheTests/TTT_RecombinationGenomeScans/run_baypass"
+ncpus=61
+start=10901
 finish=$(($start + $ncpus-1))
 echo $start $finish
 declare -A npopHash    # declare an associative array to store # of populations for each file
@@ -67,11 +67,11 @@ function call_baypass_no_mat {
     -outCovar ./converted_files/${i}_Invers_VCFallFILT$out_suffix)")
 
     # run baypass
-    g_baypass -npop ${npopHash[$i]} \
-     -gfile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.geno \
-     -efile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.covar -scalecov \
-     -outprefix ./baypass_results/${i}${out_suffix} -ncpus 4\
-     >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
+  g_baypass -npop ${npopHash[$i]} \
+    -gfile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.geno \
+    -efile ./converted_files/${i}_Invers_VCFallFILT${out_suffix}.covar -scalecov \
+    -outprefix ./baypass_results/${i}${out_suffix} -nthreads 4 \
+    >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
 }
 cd $mypath
 # create necessary directories for organization
@@ -107,15 +107,14 @@ do
 
 # run baypass again, this time using the pruned covar matrix from the last step
 	
-	cd $mypath
-	gfileName="_Invers_VCFallFILT.geno"
-	efileName="_Invers_VCFallFILT.covar"
-	omegaFile="_PRUNED_mat_omega.out"
+    cd $mypath
+    gfileName="_Invers_VCFallFILT.geno"
+    efileName="_Invers_VCFallFILT.covar"
+    omegaFile="_PRUNED_mat_omega.out"
 
-	echo -e "\n########## Running baypass on all SNPs with pruned matrix #########################"
-	call_baypass_no_mat "_Invers_VCFallFILT.vcf" "" $i
-	echo -e "\n"$i
-	if [ ! -f  ./converted_files/${i}$gfileName ]; then
+    echo -e "\n########## Running baypass on all SNPs with pruned matrix #########################"
+    echo -e "\n"$i
+    if [ ! -f  ./converted_files/${i}$gfileName ]; then
     	echo "Geno file for ${i} not found"
     	continue
     fi 
@@ -127,12 +126,16 @@ do
     	echo "Omega matrix file for ${i} not found"
     	continue
     fi
+
     g_baypass -npop ${npopHash[$i]} -gfile ./converted_files/${i}$gfileName \
-    -efile ./converted_files/${i}$efileName -scalecov \
-    -omegafile ./baypass_results/${i}$omegaFile \
-    -outprefix "./baypass_results/${i}_ALL_PRUNED_MAT" -ncpus 4 \
-    >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
-    rm ../
+        -efile ./converted_files/${i}$efileName -scalecov \
+        -omegafile ./baypass_results/${i}$omegaFile \
+        -outprefix "./baypass_results/${i}_ALL_PRUNED_MAT" -nthreads 4 \
+        >>./log_files/${i}_baypass_log.txt 2>>./log_files/${i}_baypass_err.txt
+
+rm ../results_final/indexes_remaining.txt    # clean up
+gzip ../results_final/${i}_Invers_VCFallFILT.vcf # re-zip for space
+
 done
 # pull out analysis results and store in a table
 echo -e "\n################ Putting Results into Tables ##############################"
