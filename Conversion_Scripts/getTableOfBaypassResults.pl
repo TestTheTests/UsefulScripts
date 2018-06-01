@@ -134,7 +134,7 @@ sub _readBFfile{
 			unless (looks_like_number($splitLine[0])){
 				next; # skip header
 			}
-			my $BF = $splitLine[3];
+			my $BF = $splitLine[4];
 			if ($splitLine[0] eq '1'){
 				push @EnvCol, $BF;
 			}
