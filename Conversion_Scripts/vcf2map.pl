@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use feature qw(say);
 use Getopt::Long;
+use File::Basename;
 use Pod::Usage;
 
 ######################################################################################
@@ -25,7 +26,7 @@ my $outfile;
 my $usage = "\nUsage: $0 [options]\n 
 Options:
      -vcf		VCF to convert  (required)
-     -outfile	file to print to (default = <name_of_vcf>.map
+     -outfile		file to print to (default = <name_of_vcf>.map
      -help		Show this message
 
 ";
@@ -42,8 +43,10 @@ unless ($vcf) {
 
 ######################## Convert VCF ###################################
 
-unless ($outfile){
-	my $outfile = $vcf.".map";			# generate default outfile name based on given vcf
+my $vcfBase = basename($vcf, ".vcf");
+say $vcfBase;
+unless (defined $outfile){
+	$outfile = $vcfBase.".map";			# generate default outfile name based on given vcf
 }
 
 # get filehandles
@@ -52,7 +55,9 @@ unless (open($infh, '<', $vcf)){
 	die "Could not open vcf for reading", $!;
 }
 my $outfh;
-open ($outfh,'>', $outfile);
+unless (open ($outfh,'>', $outfile)){
+	die "Could not open  $outfile for reading ", $!;
+};
 
 # read and convert the file
 vcf2map($infh, $outfh);
@@ -72,15 +77,21 @@ say "Created ", $outfile;
 #-----------------------------------------------------------------------
 sub vcf2map{
 	my ($inHandle, $outHandle) = @_;
+	my $i = 1;							# start at 1 because 0 is an invalid plink IID
 	while (<$inHandle>){
-		if ($_ =~ /^#/){		#skip the header lines
+		if ($_ =~ /^#/){				#skip the header lines
 			next;
 		}
 		my @line  = split("\t", $_);
 		my $chrom = $line[0];
 		my $varID = $line[2];
 		my $pos   = $line[1];
-	
+		
+		if ($varID eq '.'){				# replace missing var id data with a unique number
+			$varID = $i;
+		}
+		
 		say $outHandle join("\t", $chrom,$varID,"0",$pos); # print to the .map file
+		$i++;
 	}
 }

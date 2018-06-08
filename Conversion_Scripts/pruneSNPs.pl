@@ -15,8 +15,7 @@ use Data::Dumper;
 #######################################################################################
 #
 # This script takes a vcf file and a file containing scan results and returns a vcf
-# with only the quasi-independent alleles. It also generates a tab-delimited file 
-# giving the indexes of the quasi-independent alleles
+# with only the quasi-independent alleles
 #
 #######################################################################################
 
