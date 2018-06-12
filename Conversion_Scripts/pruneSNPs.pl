@@ -47,6 +47,9 @@ unless ($vcf) {
 unless ($scanResults) {
 	die "\n-scan not defined\n$usage";
 }
+unless (-e $vcf){
+	die "Could not find $vcf";
+}
 
 ######## Read in Scan Results ####################################################
 my $scanFh;
@@ -123,3 +126,6 @@ close $inVCFfh;
 
 say "\nCreated $outFile";
 say "Created $indexFile\n";
+
+# recompress vcf, compress outfile for space
+`gzip $outFile`;
