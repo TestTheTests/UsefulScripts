@@ -12,20 +12,18 @@ use File::Basename;
 
 ######################################################################################
 #
-# File	  : vcf2ped.pl
+# File	  : vcf2plink.pl
 # History : 6/1/2018 Created by Kevin Freeman(KF)
 #
 #######################################################################################
 #
 # This script takes a vcf file and a corresponding population (.txt) file and combines
-# and reformats the information, outputting a .ped file that can be used in hapflk
-# analysis
+# and reformats the information, outputting a .ped and a .map file that can be used 
+# in hapflk analysis or anything else requiring PLINK format
 #
 #######################################################################################
 
 my ($vcf, $popFile); 
-my ($inFinal, $colEnv, $colPheno, $colGroup);
-my $fastphase = 0;
 my ($outfile);
 
 ########### Command line options ######################################################
@@ -37,20 +35,7 @@ Options:
      
      -population	Corresponding population file (required)
      
-     -colGroup		Specify the column of the population file that your 
-     			group data is in. 1st col is 0 (required)
-     			
-     -colEnv		Specify the column in the population file that your
-     			environment data is in (optional)
-     			
-     -colPheno		Specify the column in the population file that your
-     			phenotype data is in (optional)
-     -colInFinal	Specify the column in the population file that tells you whether
-     			an individual is in the final dataset, ie your VCF (optional)
-     			
-     -outfile		Output file prefix for .ped file (default: <name_of_vcf>)
-     
-     -fastphase		Should a fastPHASE file also be created to determine number of clusters K (default: FALSE)
+     -outfile		Output file prefix for .ped and .map file (default: <name_of_vcf>)
      
      -help		Show this message
 
@@ -59,12 +44,7 @@ Options:
 GetOptions(
    'vcf=s' => \$vcf,
    'population=s'	=> \$popFile,
-   'colGroup=i' 	=> \$colGroup,
-   'colEnv=i'		=> \$colEnv,
-   'colPheno=i'		=> \$colPheno,
-   'colInFinal=i'	=> \$inFinal,
    'outfile=s' 		=> \$outfile,
-   'fastphase=s'	=> \$fastphase,
     help => sub { pod2usage($usage); },
 ) or pod2usage(2);
 
@@ -74,19 +54,8 @@ unless ($vcf) {
 unless ($popFile) {
 	die "\n-pop not defined\n$usage";
 }
-unless ($colGroup) {
-	die "\n-col_group not defined\n$usage";
-}
-
-if ($fastphase =~ /^(true)|1$/i){
-	$fastphase = 1;
-}
-elsif ($fastphase =~ /^(false)|0$/i){
-	$fastphase = 0;
-}
-else {
-	$fastphase = 0;
-	warn "Unrecognized -fastphase option: $fastphase. A fastphase file will not be created";
+unless (defined $outfile){
+	$outfile =  basename($vcf, ".vcf");
 }
 
 ############ Read pop file into a hash ################################################
@@ -100,11 +69,15 @@ unless (open ($popFh, "<", $popFile) ){
 my %individualsHash;
 my $individualNum = 1;				    # individualNum assigns an iid to each individual in order. Starts at 1 becaue
 										# 0 is not a valid plink iid
+my ($inFinal, $colPheno, $colGroup);
 										
 while(<$popFh>){
     chomp $_;
     my @line = split(" ",$_);
     unless (looks_like_number $line[0]) { # make sure the program doesn't store the header
+    	($inFinal)  = grep { $line[$_] eq "\"infinal\"" }    0..$#line;
+		($colGroup) = grep { $line[$_] eq "\"group\"" }      0..$#line;
+		($colPheno) = grep { $line[$_] eq "\"phenotype.\"" } 0..$#line;
     	next;
     }
     
@@ -142,17 +115,26 @@ while(<$popFh>){
 
 close $popFh;
 
-############ Read VCF into an array ###################################################
+############  Process VCF  ###################################################
 say STDERR "Reading VCF.....";
 
 my $vcfFh;
 unless(open ($vcfFh, "<", $vcf)){
-	die ("Could not open $vcf");
+	die "Could not open $vcf";
 }
 
-my @snpValArray = convertVCF($vcfFh);
+my @snpValArray = vcf2ped($vcfFh);
 
 close $vcfFh;
+#### Convert vcf into map file
+my $vcfFh2;
+unless(open($vcfFh2, "<", $vcf)){
+	die "Could not open $vcf $!";
+}
+my $mapOutFile = join(".", $outfile, "map");
+vcf2map($vcfFh2,$mapOutFile);
+
+close $vcfFh2;
 
 # snpValArray is now an array of strings. Each string corresponds to one snp. It contains
 # a list of alleles for each individual. Inviduals are separated by spaces and alleles
@@ -161,20 +143,19 @@ close $vcfFh;
 
 ########### Put data into .ped format ###############################################
 
-say STDERR "Converting.....";
+say STDERR "Writing .ped file.....";
 
 ## create outfile name if one was not given, open outfile
-my $base = basename($vcf, ".vcf");
-unless (defined $outfile){
-	$outfile = join(".", $base, "ped");
-}
-my $outfh;
-unless (open ($outfh, ">", $outfile)){
+
+my $pedOutFile = join(".", $outfile, "ped");
+
+my $pedOutFh;
+unless (open ($pedOutFh, ">", $pedOutFile)){
 	die "Could not open $outfile $!";
 }
 
 # go through the hash in order, by individual
-my @allAllelesByIndiv;                                   # array of arrays to store alleles grouped by individual
+
 foreach my $individual (sort {$a <=> $b} keys %individualsHash ){
 	my @allIndivAlleles;
 	foreach my $snp (@snpValArray){  
@@ -183,31 +164,58 @@ foreach my $individual (sort {$a <=> $b} keys %individualsHash ){
 		push @allIndivAlleles, $indivAllele;
 	}
 
-	say $outfh join(" ", $individualsHash{$individual}{group}, $individual, 
+	say $pedOutFh join(" ", $individualsHash{$individual}{group}, $individual, 
 					0, 0, 0, $individualsHash{$individual}{phenotype}, @allIndivAlleles);
-	push @allAllelesByIndiv, \@allIndivAlleles;
 }
 
-close $outfh;
-say "Created $outfile.";
+close $pedOutFh;
+say "Created $pedOutFile";
 
-######### Create fastphase file if asked for
-
-if ($fastphase){
-	say "\nCreating fastPHASE file............................";
-	createFastPhase(\@allAllelesByIndiv, \%individualsHash, $base);
-}
 
 ################# SUBROUTINES ############################################################
 
 #-----------------------------------------------------------------------
-# void context = convertVcf($infh, $outfh);
+# void context = vcf2map($infh, $outfh);
 #-----------------------------------------------------------------------
 # This subroutine takes an infile handle and an outfile handle. It 
 # takes the input vcf file, extracts the relevant data, and generates
-# a line of alleles 
+# a .map file 
 #-----------------------------------------------------------------------
-sub convertVCF {
+sub vcf2map{
+	my ($inHandle, $outFile) = @_;
+	my $outFh;
+	unless (open($outFh, ">", $outFile)){
+		die "Could not open $outFile for writing";
+	}
+	my $i = 1;							# start at 1 because 0 is an invalid plink IID
+	while (<$inHandle>){
+		if ($_ =~ /^#/){				#skip the header lines
+			next;
+		}
+		my @line  = split("\t", $_);
+		my $chrom = $line[0];
+		my $varID = $line[2];
+		my $pos   = $line[1];
+		
+		if ($varID eq '.'){				# replace missing var id data with a unique number
+			$varID = $i;
+		}
+		
+		say $outFh join("\t", $chrom,$varID,"0",$pos); # print to the .map file
+		$i++;
+	}
+	close $outFh;
+	say "Created $outFile\n";
+	
+}
+
+#-----------------------------------------------------------------------
+# void context = vcf2ped($infh);
+#-----------------------------------------------------------------------
+# This subroutine takes an infile handle. It takes the input vcf file, 
+# extracts the relevant data, and generates a line of alleles 
+#-----------------------------------------------------------------------
+sub vcf2ped {
 	my ($infh) = @_;
 	
 	my @allelesConverted;
@@ -259,44 +267,4 @@ sub _vcfLine2basesLine {
 	my %snpHash;									
 	@snpHash{@indivs} = @vals;						 # create a hash where the keys are the individuals and values are genotypes
 	return \%snpHash;								 # return referenced hash
-}
-
-
-#-----------------------------------------------------------------------
-#  createFastPhase(\@alleles, \%individuals, $fileprefix);
-#-----------------------------------------------------------------------
-# Called in void context, this subroutine takes an array of alleles,
-# a hash with information about individuals, and a file prefix and prints 
-# the information to a .inp file that can be used in fastPHASE 
-#-----------------------------------------------------------------------
-
-sub createFastPhase {
-	my ($alleleAoARef, $indivHashRef, $base) = @_;
-	my $outfile = $base.".inp";                      # create outfile name
-	
-	my $outfh;										 # open outfile
-	unless (open ($outfh, ">", $outfile)){
-		die "Could not open $outfile $! for writing";
-	}
-	
-	say $outfh scalar keys %$indivHashRef;           # say number of individuals
-	say $outfh scalar @{$alleleAoARef -> [0]};		 # say number of alleles
-	
-	## loop through all individuals and print GT information
-	my %indivHash = %$indivHashRef;
-	foreach my $indiv (sort {$a <=> $b} keys %indivHash){
-		say $outfh join(" ", "# ind", $indiv);
-		my $indivAllelesRef = $alleleAoARef -> [$indiv];   # access alleles corresponding to the individual
-		my @indivAlleles = @$indivAllelesRef;
-		my @gt1;
-		my @gt2;
-		foreach my $gt (@indivAlleles){					   # go through all alele pairs and split them up
-			push @gt1, substr $gt, 0, 1;
-			push @gt2, substr $gt, 2, 1;
-					
-		}
-		say $outfh join("", @gt1);
-		say $outfh join("", @gt2);
-	}		
-	say "Created $outfile \n\n";
 }
