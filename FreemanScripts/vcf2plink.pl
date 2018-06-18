@@ -70,6 +70,7 @@ my %individualsHash;
 my $individualNum = 1;				    # individualNum assigns an iid to each individual in order. Starts at 1 becaue
 										# 0 is not a valid plink iid
 my ($inFinal, $colPheno, $colGroup);
+my @groups;
 										
 while(<$popFh>){
     chomp $_;
@@ -90,10 +91,11 @@ while(<$popFh>){
     }
     
     my $group = $line[$colGroup];
+    push @groups, $group;							    # save all groups so they can be counted later
     
     if (int($group) != $group){
     	# make sure user gave the correct column number
-    	die "Invalid group value: ",$group,", are you sure you selected the right column?";
+    	die "Invalid group value: ",$group,", are you sure the headings match the data?";
     }
    
   	$individualsHash{$individualNum}{group}  = $group;
@@ -155,7 +157,6 @@ unless (open ($pedOutFh, ">", $pedOutFile)){
 }
 
 # go through the hash in order, by individual
-
 foreach my $individual (sort {$a <=> $b} keys %individualsHash ){
 	my @allIndivAlleles;
 	foreach my $snp (@snpValArray){  
@@ -164,12 +165,15 @@ foreach my $individual (sort {$a <=> $b} keys %individualsHash ){
 		push @allIndivAlleles, $indivAllele;
 	}
 
+	
 	say $pedOutFh join(" ", $individualsHash{$individual}{group}, $individual, 
 					0, 0, 0, $individualsHash{$individual}{phenotype}, @allIndivAlleles);
 }
 
 close $pedOutFh;
-say "Created $pedOutFile";
+say STDERR "Created $pedOutFile";
+my @uniqueGroups = uniq(@groups);
+say scalar @uniqueGroups;         		# ouput the number of groups in the dataset to stdout so it can be easily recorded programmatically   
 
 
 ################# SUBROUTINES ############################################################
@@ -205,7 +209,7 @@ sub vcf2map{
 		$i++;
 	}
 	close $outFh;
-	say "Created $outFile\n";
+	say STDERR "Created $outFile\n";
 	
 }
 
@@ -267,4 +271,13 @@ sub _vcfLine2basesLine {
 	my %snpHash;									
 	@snpHash{@indivs} = @vals;						 # create a hash where the keys are the individuals and values are genotypes
 	return \%snpHash;								 # return referenced hash
+}
+#-----------------------------------------------------------------------
+# @uniqueArray = uniq(@arrayWithDups);
+#-----------------------------------------------------------------------
+# This subroutine removes any duplicate values from an array
+#-----------------------------------------------------------------------
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
 }
