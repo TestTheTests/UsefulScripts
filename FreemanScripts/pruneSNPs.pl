@@ -81,10 +81,10 @@ while (<$scanFh>){
 }
 
 ###### Read in VCF, check lines, print ###########################################
+my $noExt = $vcf;
+$noExt =~ s/\.vcf$//;    # remove .vcf from the end of the vcf file name
 
 unless (defined $outFile){
-	my $noExt = $vcf;
-	$noExt =~ s/\.vcf$//;    # remove .vcf from the end of the vcf file name
 	$outFile = join(".", $noExt, "pruned", "vcf");
 }
 
@@ -96,10 +96,9 @@ my $outFh;
 unless (open($outFh, '>', $outFile)){
 	die "Can't open $outFile for writing $!";
 }
-my $indexesOutFh;
-my $indexFile = "indexes_remaining.txt";
-unless (open ($indexesOutFh, '>', $indexFile)){
-	die "Can't open indexes outfile for writing $!";
+my $indexesFh;
+unless (open($indexesFh, '>', $noExt."_indexes_remaining.txt")){
+	die "can't open $noExt","_indexes_remaining.txt";
 }
 
 my $i = 0;
@@ -116,16 +115,14 @@ while (<$inVCFfh>){
 	
 	if (defined $posHash{$key} and $posHash{$key} eq "TRUE"){
 		say $outFh $_;
-		print $indexesOutFh $i."\t"; 
+		say $indexesFh $i;
 	}
 	$i++;
 }
 
 close $outFh;
 close $inVCFfh;
+close $indexesFh;
 
 say "\nCreated $outFile";
-say "Created $indexFile\n";
 
-# recompress vcf, compress outfile for space
-`gzip $outFile`;
