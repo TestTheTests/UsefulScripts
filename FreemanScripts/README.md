@@ -1,12 +1,49 @@
 # Conversion Scripts
 
-This is a collection of scripts used to convert VCF files to other formats:
+This is a collection of scripts used to convert files (mainly VCFs) to other formats:
+* [writeCSVtoMD.py](#writecsvtomdpy)
 * [vcf2baypass.pl](#vcf2baypasspl)
 * [vcf2H_scan.pl](#vcf2h_scanpl)
 * [vcf2map.pl](#vcf2mappl)
 * [pruneSNPs.pl](#prunesnpspl)
 ---
 
+## writeCSVtoMD.py
+
+This is a script that I wrote to help me in editing the Lotterhos Lab Protocols website. It takes a file containing a table in plain text and outputs that same table in properly formatted markdown. It is written in python 3 
+
+### Usage
+
+The script is meant to be able to handle a variety of files. Here are some example use cases:
+
+A CSV file where the first line is the header
+
+`$ python writeCSVtoMD.py myfile.csv --header`
+
+A tab-delimited table where the first line is the header
+
+`$ python writeCSVtoMD.py myfile.txt --header --sep '\t'`
+
+A CSV file without the header, where you want your column names to be "package" and "version"
+
+`$ python writeCSVtoMD.py myfile.csv --columns package,version
+
+### Inputs:
+
+**CSV:** Required argument. The file to convert. Does not have to be comma separated, but columns do have to have a single consistent separator and newlines are interpreted as rows.
+
+**header:** Optional flag. If specified, the program treats the first line of the file as the header. If not, you will be required to input column names to be used as the header
+
+**columns:** The names of your columns, to be used as the header in the output. Required if --header is not turned on. Any number of column names can be specified but they must be separated by commas. Ex: `--columns package,version,date`
+
+**sep:** The column separator in the input file. Default is ','  
+
+## Output:
+
+The program outputs the converted markdown to standard out. This can be easily captured with the '>' or '>>' operators. 
+
+Ex: 
+`$ python writeCSVtoMD.py myfile.csv --header >> mywebpage.md`
 
 ## vcf2baypass.pl
 
