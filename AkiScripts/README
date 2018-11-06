@@ -1,4 +1,4 @@
-##Files
+## Files
 Trimmomatic_AutoBatchFastq.sh - Bash script that reads all paired end R1 and R2 uncompressed fastq files and outputs correctly 
   named Paired/Unpaired files.
   Requires primer sequence file TruSeq3-PE-2.fa to be in directory.
