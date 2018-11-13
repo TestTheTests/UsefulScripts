@@ -14,9 +14,11 @@ use Data::Dumper qw(Dumper);
 #
 ########################################################################
 #
-# This program takes a MLM output file from TASSEL and a scanResults.txt
-# file from the command line. Both files are read into arrays whith each
-# line as an element.
+# This program takes two MLM output files from TASSEL, a scanResults.txt,
+# and the dataset version number from the command line. The scanData 
+# file is read and two references to arrays are created containg causal
+# and neutral loci. The base pair location is obtained for each of those
+# arrays and those are stored in new arrays. The base 
 #
 ########################################################################
 
@@ -38,11 +40,11 @@ Options:
 
 GetOptions(
 
-	'scanFile=s'		 =>\$scanFile,
-	'sigTasselFile=s'	 =>\$sigTasselFile,
-	'nonSigTasselFile=s' =>\$nonSigTasselFile,
-	'version=s'			 =>\$version,
-	help			     => sub {pod2usage($usage); },
+	'scanFile=s'			=>\$scanFile,
+	'sigTasselFile=s'		=>\$sigTasselFile,
+	'nonSigTasselFile=s'	=>\$nonSigTasselFile,
+	'version=s'				=>\$version,
+	help					=> sub {pod2usage($usage); },
 	
 	) or die($usage);
 
@@ -65,10 +67,10 @@ unless ($version){
 ########################################################################
 #Outfiles
 
-my $tp_out = join('', $version, '.domAdd.TP.test.txt');
-my $fn_out = join('', $version, '.domAdd.FN.test.txt');
-my $fp_out = join('', $version, '.domAdd.FP.test.txt');
-my $tn_out = join('', $version, '.domAdd.TN.test.txt');
+my $tp_out = join('', $version, '.domAdd.TP.txt');
+my $fn_out = join('', $version, '.domAdd.FN.txt');
+my $fp_out = join('', $version, '.domAdd.FP.txt');
+my $tn_out = join('', $version, '.domAdd.TN.txt');
 
 my $tpFh   = getFh('>', $tp_out);
 my $fnFh   = getFh('>', $fn_out);
@@ -95,7 +97,7 @@ my @fp_matchedData	= matchTassel2Scan($sigTasselFh,    \@neutralScanData, \@neut
 my @tn_matchedData	= matchTassel2Scan($nonSigTasselFh, \@neutralScanData, \@neutralBpArray);
 
 
-my @tp_finalArray   = processFinalArray(@tp_matchedData);
+my @tp_finalArray 	= processFinalArray(@tp_matchedData);
 my @fn_finalArray	= processFinalArray(@fn_matchedData);
 my @fp_finalArray	= processFinalArray(@fp_matchedData);
 my @tn_finalArray	= processFinalArray(@tn_matchedData);
@@ -105,7 +107,6 @@ print2File($tpFh, \@tp_finalArray);
 print2File($fnFh, \@fn_finalArray);
 print2File($fpFh, \@fp_finalArray);
 print2File($tnFh, \@tn_finalArray);
-
 
 
 ########################################################################
