@@ -51,9 +51,9 @@ GetOptions(
 
 	'scanFile=s'				=>\$scanFile,
 	'sigTasselFile=s'			=>\$sigTasselFile,
-	'nonSigTasselFile=s'		=>\$nonSigTasselFile,
-	'version=s'					=>\$version,
-	help						=> sub {pod2usage($usage); },
+	'nonSigTasselFile=s'			=>\$nonSigTasselFile,
+	'version=s'				=>\$version,
+	help					=> sub {pod2usage($usage); },
 	
 	) or die($usage);
 
