@@ -18,9 +18,18 @@ use Data::Dumper qw(Dumper);
 # and the dataset version number from the command line. The scanData 
 # file is read and two references to arrays are created containg causal
 # and neutral loci. The base pair location is obtained for each of those
-# arrays and those are stored in new arrays. The base 
+# arrays and those are stored in new arrays. The base pairs from the 
+# seperated arrays are then used to match up with the TASSEL file. For,
+# instance, the array containing the base pairs for all causal loci is 
+# used to match with the base pairs for all significant or non 
+# significant (depending which one is called) base pairs to find 
+# matches. If there is a match, the additive and dominance information
+# is added to the corresponding line from the scan file. That line is 
+# stored in a final array. The array containing the additive and 
+# dominance information is printed to an outfile.
 #
 ########################################################################
+#Command Line Options
 
 my $scanFile;
 my $sigTasselFile;
@@ -31,8 +40,8 @@ my $usage = "\n$0 [options] \n
 Options:
 
 -scanFile			File to open (Scan Results file Ex. 10900_Invers_ScanResults.txt)
--sigTasselFile		File to open (Significant Tassel MLM Ex. 10900.MLM.significant.txt)
--nonSigTasselFile	File to open (Non Significant Tassel MLM Ex. 10900.MLM.not_significant.txt)
+-sigTasselFile			File to open (Significant Tassel MLM Ex. 10900.MLM.significant.txt)
+-nonSigTasselFile		File to open (Non Significant Tassel MLM Ex. 10900.MLM.not_significant.txt)
 -version			Dataset Number (10900)
 -help				Show this message
 
@@ -40,11 +49,11 @@ Options:
 
 GetOptions(
 
-	'scanFile=s'			=>\$scanFile,
-	'sigTasselFile=s'		=>\$sigTasselFile,
-	'nonSigTasselFile=s'	=>\$nonSigTasselFile,
-	'version=s'				=>\$version,
-	help					=> sub {pod2usage($usage); },
+	'scanFile=s'				=>\$scanFile,
+	'sigTasselFile=s'			=>\$sigTasselFile,
+	'nonSigTasselFile=s'		=>\$nonSigTasselFile,
+	'version=s'					=>\$version,
+	help						=> sub {pod2usage($usage); },
 	
 	) or die($usage);
 
@@ -67,6 +76,9 @@ unless ($version){
 ########################################################################
 #Outfiles
 
+#File handles are obtained for the four output files representing true
+#positives, false negatives, false positives, and true negatives
+
 my $tp_out = join('', $version, '.domAdd.TP.txt');
 my $fn_out = join('', $version, '.domAdd.FN.txt');
 my $fp_out = join('', $version, '.domAdd.FP.txt');
@@ -78,64 +90,38 @@ my $fpFh   = getFh('>', $fp_out);
 my $tnFh   = getFh('>', $tn_out);
 
 ########################################################################
+#Main
 
-my $scanFh    							= getFh('<', $scanFile);
-my $sigTasselFh  						= getFh('<', $sigTasselFile);
-my $nonSigTasselFh						= getFh('<', $nonSigTasselFile);
+my $scanFh    					= getFh('<', $scanFile);
+my $sigTasselFh  				= getFh('<', $sigTasselFile);
+my $nonSigTasselFh				= getFh('<', $nonSigTasselFile);
 my ($causalScanData, $neutralScanData)  = getScanData2Array($scanFh);
 
 my @causalScanData  = @$causalScanData;
 my @neutralScanData = @$neutralScanData;
 
-my @causalBpArray   = getBParray(@causalScanData);
+my @causalBpArray	= getBParray(@causalScanData);
 my @neutralBpArray	= getBParray(@neutralScanData);
-
 
 my @tp_matchedData 	= matchTassel2Scan($sigTasselFh,    \@causalScanData,  \@causalBpArray);
 my @fn_matchedData	= matchTassel2Scan($nonSigTasselFh, \@causalScanData,  \@causalBpArray);
 my @fp_matchedData	= matchTassel2Scan($sigTasselFh,    \@neutralScanData, \@neutralBpArray);
 my @tn_matchedData	= matchTassel2Scan($nonSigTasselFh, \@neutralScanData, \@neutralBpArray);
 
-
 my @tp_finalArray 	= processFinalArray(@tp_matchedData);
 my @fn_finalArray	= processFinalArray(@fn_matchedData);
 my @fp_finalArray	= processFinalArray(@fp_matchedData);
 my @tn_finalArray	= processFinalArray(@tn_matchedData);
-
 
 print2File($tpFh, \@tp_finalArray);
 print2File($fnFh, \@fn_finalArray);
 print2File($fpFh, \@fp_finalArray);
 print2File($tnFh, \@tn_finalArray);
 
-
 ########################################################################
-# The following subroutine that returns the bp position, additive, and 
-# dominance effect of the Tassel output file
-
-sub _tassel {
-	my ($tasselFh) = @_;
-	my @effectsStore;
-	while(<$tasselFh>){
-		chomp $_;
-		my $char = substr($_, 0, 5);
-		if ( ! ($char eq "Trait")){
-			my @line = split(" ", $_);
-			my $domEffect = $line[10];
-			my $addEffect = $line[7];
-			my $pos = $line[3];
-			
-			my @effects = join("\t", $pos, $addEffect, $domEffect);
-			push (@effectsStore, @effects)
-		}
-	}
-	return @effectsStore;
-}
-
-###################################################################################
-# The following subroutine takes two arguments. The first is whether it is a read or
-# write operator. The second is the file name to be either opened or written to. A
-# file handle is returned
+# The following subroutine takes two arguments. The first is whether it 
+# is a read or write operator. The second is the file name to be either 
+# opened or written to. A file handle is returned
 
 sub getFh {
 	my ($readOrwrite, $file) = @_;
@@ -158,7 +144,13 @@ sub getFh {
 	}
 }
 
-###################################################################################
+########################################################################
+# The following subroutine takes the scan_results filehandle as an 
+# argument. The file is looped through and if the muttype is 2 the 
+# additive and dominance effects as well as the base pair position are 
+# stored in the causal array. If the muttype is MT=1 then the effects 
+# are stored in a neutral array. The two arrays are returned as 
+# references. 
 
 sub getScanData2Array{
 	my ($scanFh) = @_;
@@ -186,11 +178,15 @@ sub getScanData2Array{
 	return (\@causalScanData, \@neutralScanData);
 }
 
-###################################################################################
+########################################################################
+# The following subroutine takes either the causal or neutral array that
+# contains the information from the ScanResults file. The base pairs are
+# stored in a new array and returned.
 
 sub getBParray{
 	my @scanData = @_;
 	my @bpArray;
+	
 	foreach(@scanData){
 		chomp $_;
 		my @line = split(" ", $_);
@@ -199,35 +195,37 @@ sub getBParray{
 	return @bpArray;
 }
 
-###################################################################################
-
-#Matches the base pair positions of both data sets, both observed and expected.
-#Adds the expected additive effect and the expected dominance effect to the observed 
-#data if there is a match.
+########################################################################
+# The following subroutine takes the tassel file handle, the scan data 
+# array whether causal or neutral, and the bp array whether causal or 
+# neutral. The tassel data is obtained from the tassel() helper sub.
+# The two files are looped over and if there is a match then the tassel
+# data is added to the end of the scan data line. The array with the 
+# data of matched base pairs is returned.
 
 sub matchTassel2Scan{
 	
 	my ($tasselFh, $scanDataRef, $bpArrayRef) = @_;
 	my $length_bpArray = scalar @$bpArrayRef;
-	my @scanData       = @$scanDataRef;
+	my @scanData       = @$scanDataRef;	#dereference
 	my @bpArray        = @$bpArrayRef;
-	my @tasselData = _tassel($tasselFh);
+	my @tasselData     = _tassel($tasselFh);
 	
 	
 	for(my $i = 0; $i <= $length_bpArray-1; $i++){
 		foreach(@tasselData){
 			chomp $_;
 			my @line = split(" ", $_);
-			if($line[0] eq $bpArray[$i]){
+			if($line[0] eq $bpArray[$i]){	#if there is a match in base pairs
 						
-				my $finalLine = $scanData[$i];
-				my @finalLineArray = split(" ", $finalLine);
+				my $finalLine = $scanData[$i];	#store the scan data in a scalar
+				my @finalLineArray = split(" ", $finalLine);	#split the scalar into an array by whitespace
 			
-				if(! ($line[1] eq 'NaN' | $line[2] eq 'NaN')){
-					push (@finalLineArray, $line[1]);
+				if(! ($line[1] eq 'NaN' | $line[2] eq 'NaN')){	#don't include if NaN
+					push (@finalLineArray, $line[1]);	#add the addititive and dominance effect to the scan data
 					push (@finalLineArray, $line[2]);
-					$finalLine = join("\t", @finalLineArray);
-					$scanData[$i] = $finalLine;
+					$finalLine = join("\t", @finalLineArray);	#turn the array back into a string
+					$scanData[$i] = $finalLine;	#reset the scanData line
 				}
 			}
 		}
@@ -235,7 +233,37 @@ sub matchTassel2Scan{
 	return @scanData;
 }
 
-###################################################################################
+########################################################################
+# The following subroutine takes a Tassle file handle as an argument. 
+# The additive and dominance effect are stored in scalar variables 
+# along with the base pair position. The three pieces of information 
+# are joined into a single line and pushed into an array. The array with
+# the data is returned. This subroutine is called from the 
+# matchTassel2Scan sub.
+
+sub _tassel {
+	my ($tasselFh) = @_;
+	my @effectsStore;
+	while(<$tasselFh>){
+		chomp $_;
+		my $char = substr($_, 0, 5);
+		if ( ! ($char eq "Trait")){
+			my @line = split(" ", $_);
+			my $domEffect = $line[10];
+			my $addEffect = $line[7];
+			my $pos = $line[3];
+			
+			my @effects = join("\t", $pos, $addEffect, $domEffect);
+			push (@effectsStore, @effects)
+		}
+	}
+	return @effectsStore;
+}
+
+########################################################################
+# The following subroutine takes the array of matched data as an 
+# argument. The sub iterates over each line and only stores the line if 
+# it has 6 elements. The muttype column will later be removed.
 
 sub processFinalArray{
 	my @matchedData = @_;
@@ -252,21 +280,26 @@ sub processFinalArray{
 	return @finalArray;
 }
 
-###################################################################################
+########################################################################
+# The following subroutine takes an outfile handle and an array 
+# reference to the data as its arguments. The data is printed to the 
+# outfile.
 
 sub print2File{
 	my ($outFh, $finalArrayRef) = @_;
+	
 	say $outFh join("\t", "basePairPosition", "expectedAdditive", "expectedDominance", "tasselAdditive", "tasselDominance");
 
 	foreach (@$finalArrayRef){
 		chomp $_;
 		my @line = split(" ", $_);
-		my $MTremoved = join("\t", $line[0], $line[2], $line[3], $line[4], $line[5]);
+		my $MTremoved = join("\t", $line[0], $line[2], $line[3], $line[4], $line[5]); #remove muttype column
 		say $outFh $MTremoved;
 	}
 }
 
-###################################################################################
+########################################################################
+
 
 close $sigTasselFh;
 close $nonSigTasselFh;
