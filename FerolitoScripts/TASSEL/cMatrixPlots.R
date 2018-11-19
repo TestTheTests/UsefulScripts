@@ -42,6 +42,8 @@ x.max.add<-max(TP.table$expectedAdditive)
 y.min.add<-min(TP.table$tasselAdditive)
 y.max.add<-max(TP.table$tasselAdditive)
 
+#Determine how to set the x and y axis range
+
 if(x.min.add < y.min.add){
   min.add<-x.min.add
 }else{
@@ -56,6 +58,8 @@ if(x.max.add > y.max.add){
 
 min.add<-min.add - 0.25
 max.add<-max.add + 0.25
+
+#True Positive additive effect
 
 ggplot(data = TP.table) +
   geom_point(mapping = aes(x = expectedAdditive, y = tasselAdditive)) +
@@ -75,6 +79,8 @@ x.max.dom<-max(TP.table$expectedDominance)
 y.min.dom<-min(TP.table$tasselDominance)
 y.max.dom<-max(TP.table$tasselDominance)
 
+#Determine how to set the x and y axis range
+
 if(x.min.dom < y.min.dom){
   min.dom<-x.min.dom
 }else{
@@ -89,6 +95,8 @@ if(x.max.dom > y.max.dom){
 
 min.dom<-min.dom - 0.15
 max.dom<-max.dom + 0.15
+
+#True Positive dominance effect
 
 ggplot(data = TP.table) +
   geom_point(mapping = aes(x = expectedDominance, y = tasselDominance)) +
@@ -119,6 +127,8 @@ if(falseNegativeNumber > 0){
   y.min.add<-min(FN.table$tasselAdditive)
   y.max.add<-max(FN.table$tasselAdditive)
 
+  #Determine how to set the x and y axis range
+  
   if(x.min.add < y.min.add){
     min.add<-x.min.add
   }else{
@@ -134,6 +144,8 @@ if(falseNegativeNumber > 0){
   min.add<-min.add - 0.25
   max.add<-max.add + 0.25
 
+  #False Negative additive effect
+  
   ggplot(data = FN.table) +
     geom_point(mapping = aes(x = expectedAdditive, y = tasselAdditive)) +
     xlab("Expected Additive") + ylab("Observed Additive") +
@@ -152,6 +164,8 @@ if(falseNegativeNumber > 0){
   y.min.dom<-min(FN.table$tasselDominance)
   y.max.dom<-max(FN.table$tasselDominance)
 
+  #Determine how to set the x and y axis range
+  
   if(x.min.dom < y.min.dom){
     min.dom<-x.min.dom
   }else{
@@ -167,6 +181,8 @@ if(falseNegativeNumber > 0){
   min.dom<-min.dom - 0.15
   max.dom<-max.dom + 0.15
 
+  #False Negative dominance effect
+  
   ggplot(data = FN.table) +
     geom_point(mapping = aes(x = expectedDominance, y = tasselDominance)) +
     xlab("Expected Dominance") + ylab("Observed Dominance") +
@@ -194,6 +210,8 @@ x.max.add<-max(FP.table$expectedAdditive)
 y.min.add<-min(FP.table$tasselAdditive)
 y.max.add<-max(FP.table$tasselAdditive)
 
+#Determine how to set the x and y axis range
+
 if(x.min.add < y.min.add){
   min.add<-x.min.add
 }else{
@@ -208,6 +226,8 @@ if(x.max.add > y.max.add){
 
 min.add<-min.add - 0.25
 max.add<-max.add + 0.25
+
+#False Positive additive effect
 
 ggplot(data = FP.table) +
   geom_point(mapping = aes(x = expectedAdditive, y = tasselAdditive)) +
@@ -227,6 +247,8 @@ x.max.dom<-max(FP.table$expectedDominance)
 y.min.dom<-min(FP.table$tasselDominance)
 y.max.dom<-max(FP.table$tasselDominance)
 
+#Determine how to set the x and y axis range
+
 if(x.min.dom < y.min.dom){
   min.dom<-x.min.dom
 }else{
@@ -242,6 +264,8 @@ if(x.max.dom > y.max.dom){
 min.dom<-min.dom - 0.15
 max.dom<-max.dom + 0.15
 
+#False Positive dominance effect
+
 ggplot(data = FP.table) + 
   geom_point(mapping = aes(x = expectedDominance, y = tasselDominance)) +
   xlab("Expected Dominance") + ylab("Observed Dominance") +
@@ -253,7 +277,7 @@ ggplot(data = FP.table) +
 outfile<-paste0(fileNumber, "_FP.EvsO.dom.png")
 ggsave(outfile, last_plot(), path = path)
 unlink(outfile)
-print("Made it this far")
+
 
 #Store confusion matrix data in a table
 ########################################################################################################
