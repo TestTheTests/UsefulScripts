@@ -92,9 +92,9 @@ my $tnFh   = getFh('>', $tn_out);
 ########################################################################
 #Main
 
-my $scanFh    					= getFh('<', $scanFile);
-my $sigTasselFh  				= getFh('<', $sigTasselFile);
-my $nonSigTasselFh				= getFh('<', $nonSigTasselFile);
+my $scanFh    				= getFh('<', $scanFile);
+my $sigTasselFh  			= getFh('<', $sigTasselFile);
+my $nonSigTasselFh			= getFh('<', $nonSigTasselFile);
 my ($causalScanData, $neutralScanData)  = getScanData2Array($scanFh);
 
 my @causalScanData  = @$causalScanData;
