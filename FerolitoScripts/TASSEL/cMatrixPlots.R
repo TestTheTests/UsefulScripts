@@ -1,5 +1,23 @@
 #!/usr/bin/env Rscript
 
+########################################################################
+# 
+# File   :  cMatrixPlots.R
+# History:  This program was written by Brian Ferolito   
+#
+########################################################################
+# 
+# This program loads the four files with the true positive, false 
+# positive, false negative, and true positve information. A for loop is 
+# used to do this for each of the 60 data sets. Expected vs observed
+# is plotted for both additive and dominance effects for the true 
+# positive values, false negative values, and false positive values. 
+# The number of true positives, false negatives, false positives, and 
+# true positives are written to an outfile with each row representing a 
+# dataset. 
+#
+########################################################################
+
 CM.outfile<-file.create("~/Desktop/Lotterhos_Lab/allPlots/confusion_matrix.txt")
 fileConn<-file("~/Desktop/Lotterhos_Lab/allPlots/confusion_matrix.txt")
 CM.header<-paste("True Positive", "False Negative", "False Positive", "True Negative", "False Negative Missing Values", sep = "\t")
