@@ -1,5 +1,21 @@
 #!/usr/bin/env Rscript
 
+########################################################################
+# 
+# File   :  determineSignificantLoci.R
+# History:  This program was written by Brian Ferolito   
+#
+########################################################################
+#
+# This program takes two command line arguments: the TASSEL MLM file and 
+# the dataset number. The Benjamini Hotchberg adjustment is conducted 
+# and stored in a new column 'Q'. The df is then filtered into two 
+# seperate data frames based on whether the q value is less than or 
+# greater than 0.05. The two data frames are written to separate 
+# outfiles.
+#
+########################################################################
+
 library("tidyverse")
 library("ggplot2")
 
